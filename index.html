@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREASURY SAINTS: WOLF STREET</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik+Mono+One&display=swap');
+        
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --neon-yellow: #ffff00;
+            --neon-green: #00ff00;
+            --neon-red: #ff0000;
+            --dark-blue: #0f0f23;
+            --deep-purple: #330033;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--dark-blue);
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: rgba(0,0,30,0.8);
+            padding: 20px;
+            border: 4px solid var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+        
+        h1 {
+            font-family: 'Rubik Mono One', sans-serif;
+            color: var(--neon-pink);
+            text-align: center;
+            margin: 0 0 20px 0;
+            text-shadow: 3px 3px 0 var(--neon-cyan);
+        }
+        
+        #wallet-status {
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(0,0,50,0.5);
+            border: 2px solid var(--neon-cyan);
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,50,0.5);
+            border: 2px solid var(--neon-cyan);
+        }
+        
+        .stat {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat span {
+            display: block;
+            font-size: 1.2em;
+            margin-top: 5px;
+        }
+        
+        #money { color: var(--neon-yellow); }
+        #tokens { color: var(--neon-pink); }
+        #energy { color: var(--neon-green); }
+        
+        #location-view {
+            height: 300px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid var(--neon-pink);
+            background-color: #000;
+        }
+
+        /* Chibi Businessman */
+        .chibi-businessman {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            bottom: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        .chibi-head {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            bottom: 40px;
+            left: 10px;
+            background: #ffdbac;
+            border-radius: 50%;
+            border: 2px solid #e0b78a;
+        }
+        
+        .chibi-body {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            bottom: 0;
+            left: 10px;
+            background: #0077cc;
+            border-radius: 10px 10px 0 0;
+            border: 2px solid #005599;
+        }
+        
+        .chibi-arm {
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background: #0077cc;
+            border: 2px solid #005599;
+            border-radius: 5px;
+        }
+        
+        .chibi-arm.left {
+            left: 5px;
+            bottom: 25px;
+            transform-origin: top center;
+            animation: armSwingLeft 2s infinite;
+        }
+        
+        .chibi-arm.right {
+            right: 5px;
+            bottom: 25px;
+            transform-origin: top center;
+            animation: armSwingRight 2s infinite;
+        }
+        
+        @keyframes armSwingLeft {
+            0%, 100% { transform: rotate(-20deg); }
+            50% { transform: rotate(20deg); }
+        }
+        
+        @keyframes armSwingRight {
+            0%, 100% { transform: rotate(20deg); }
+            50% { transform: rotate(-20deg); }
+        }
+
+        /* Office Scene */
+        .office-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #000033, #000066);
+        }
+        
+        .office-desk {
+            position: absolute;
+            bottom: 0;
+            width: 80%;
+            height: 40%;
+            left: 10%;
+            background: #111122;
+            border-top: 4px solid var(--neon-pink);
+        }
+        
+        .office-computer {
+            position: absolute;
+            bottom: 45%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+            background: #000;
+            border: 3px solid var(--neon-cyan);
+            z-index: 5;
+        }
+        
+        .computer-screen {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: #001122;
+            color: var(--neon-green);
+            font-family: 'Press Start 2P';
+            font-size: 8px;
+            padding: 5px;
+            overflow: hidden;
+        }
+
+        /* Home Scene */
+        .home-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--deep-purple), #660066);
+        }
+        
+        .home-couch {
+            position: absolute;
+            bottom: 0;
+            width: 70%;
+            height: 30%;
+            left: 15%;
+            background: #220022;
+            border-top: 4px solid var(--neon-cyan);
+            z-index: 5;
+        }
+        
+        .home-tv {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 80px;
+            background: #000;
+            border: 3px solid var(--neon-pink);
+            z-index: 5;
+        }
+
+        /* Driving Scene */
+        .driving-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .speedometer {
+            width: 100px;
+            height: 100px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            border: 4px solid var(--neon-pink);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: var(--neon-cyan);
+            margin-bottom: 20px;
+            z-index: 2;
+        }
+        
+        .road {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            background: #111;
+            z-index: 1;
+        }
+        
+        .road-line {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            height: 5px;
+            background: repeating-linear-gradient(to right, 
+                var(--neon-cyan), var(--neon-cyan) 40px, 
+                transparent 40px, transparent 80px);
+            animation: roadMove 1s linear infinite;
+        }
+        
+        @keyframes roadMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-80px); }
+        }
+
+        /* Action Buttons */
+        #actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px;
+            background: #000;
+            color: #fff;
+            border: 2px solid var(--neon-cyan);
+            font-family: 'Press Start 2P';
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        
+        .travel-btn {
+            border-color: var(--neon-pink);
+        }
+        
+        #connect-btn {
+            background: #9945FF;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        #message-log {
+            height: 100px;
+            overflow-y: auto;
+            border: 2px solid var(--neon-cyan);
+            padding: 10px;
+            background: rgba(0,0,30,0.5);
+            font-size: 0.7em;
+        }
+        
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid rgba(0,255,255,0.2);
+        }
+        
+        .success { color: var(--neon-green); }
+        .error { color: var(--neon-red); }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>TREASURY SAINTS: WOLF STREET</h1>
+        
+        <div id="wallet-status">Wallet: Not connected</div>
+        <button id="connect-btn">CONNECT WALLET</button>
+        
+        <div id="stats">
+            <div class="stat">Day: <span id="day">1</span></div>
+            <div class="stat">Money: $<span id="money">1000</span></div>
+            <div class="stat">Energy: <span id="energy">100</span>%</div>
+            <div class="stat">SAINTS: <span id="tokens">0</span></div>
+        </div>
+        
+        <div id="location-view"></div>
+        
+        <div id="travel-buttons">
+            <button class="travel-btn" id="go-office">Go to Office</button>
+            <button class="travel-btn" id="go-home">Go Home</button>
+        </div>
+        
+        <div id="actions"></div>
+        
+        <div id="message-log"></div>
+    </div>
+
+    <script src="https://unpkg.com/@solana/web3.js@1.70.1/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/spl-token@0.2.0/lib/index.iife.js"></script>
+    <script>
+        // ======== BLOCKCHAIN CONFIG ======== //
+        const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
+        const TOKEN_MINT_ADDRESS = "h5eXaXRXyh8nzmPKxuRhySQkQxtSXECZmzBSKXfpump";
+        const TREASURY_WALLET = "A9pn3nqqoPEvw316py3WW7oPrub9iPYfCQQ24ub9xKY8";
+        const TOKEN_DECIMALS = 9;
+
+        // ======== GAME STATE ======== //
+        const game = {
+            day: 1,
+            money: 1000,
+            energy: 100,
+            tokens: 0,
+            location: 'office',
+            wallet: null,
+            tokenAccount: null,
+            actions: {
+                office: [
+                    { name: "Cold Call", cost: 0, earn: 200, energy: 15, message: "Made cold calls!" },
+                    { name: "Pump Stocks", cost: 100, earn: 500, energy: 25, message: "Market manipulation!" },
+                    { name: "Host Seminar", cost: 300, earn: 1000, energy: 40, message: "Convinced suckers to invest!" },
+                    { name: "Take 'Ludes", cost: 50, earn: 0, energy: -50, message: "You took Quaaludes... woah" }
+                ],
+                home: [
+                    { name: "Sleep", cost: 0, earn: 0, energy: 100, message: "You slept well" },
+                    { name: "Buy Ferrari", cost: 500, earn: 0, energy: 0, message: "New Ferrari!" },
+                    { name: "Throw Party", cost: 800, earn: 0, energy: -30, message: "EPIC PARTY!" },
+                    { name: "Watch TV", cost: 0, earn: 0, energy: 20, message: "Watched TV" }
+                ]
+            }
+        };
+
+        // DOM Elements
+        const locationViewEl = document.getElementById('location-view');
+        const actionsEl = document.getElementById('actions');
+        const messageLogEl = document.getElementById('message-log');
+        const connectBtn = document.getElementById('connect-btn');
+        const goOfficeBtn = document.getElementById('go-office');
+        const goHomeBtn = document.getElementById('go-home');
+        const walletStatusEl = document.getElementById('wallet-status');
+        const dayEl = document.getElementById('day');
+        const moneyEl = document.getElementById('money');
+        const energyEl = document.getElementById('energy');
+        const tokensEl = document.getElementById('tokens');
+
+        // ======== GAME FUNCTIONS ======== //
+        function createChibiBusinessman() {
+            const chibi = document.createElement('div');
+            chibi.className = 'chibi-businessman';
+            
+            const head = document.createElement('div');
+            head.className = 'chibi-head';
+            
+            const body = document.createElement('div');
+            body.className = 'chibi-body';
+            
+            const armLeft = document.createElement('div');
+            armLeft.className = 'chibi-arm left';
+            
+            const armRight = document.createElement('div');
+            armRight.className = 'chibi-arm right';
+            
+            body.appendChild(armLeft);
+            body.appendChild(armRight);
+            chibi.appendChild(head);
+            chibi.appendChild(body);
+            
+            return chibi;
+        }
+
+        function renderOffice() {
+            locationViewEl.innerHTML = '';
+            actionsEl.innerHTML = '';
+            
+            const office = document.createElement('div');
+            office.className = 'office-bg';
+            
+            const desk = document.createElement('div');
+            desk.className = 'office-desk';
+            
+            const computer = document.createElement('div');
+            computer.className = 'office-computer';
+            
+            const screen = document.createElement('div');
+            screen.className = 'computer-screen';
+            screen.innerHTML = 'TREASURY SAINTS<br>TRADING TERMINAL';
+            
+            const chibi = createChibiBusinessman();
+            
+            computer.appendChild(screen);
+            office.appendChild(desk);
+            office.appendChild(computer);
+            office.appendChild(chibi);
+            locationViewEl.appendChild(office);
+            
+            // Create action buttons
+            game.actions.office.forEach(action => {
+                const btn = document.createElement('button');
+                btn.textContent = action.name;
+                btn.addEventListener('click', () => performAction(action));
+                actionsEl.appendChild(btn);
+            });
+        }
+
+        function renderHome() {
+            locationViewEl.innerHTML = '';
+            actionsEl.innerHTML = '';
+            
+            const home = document.createElement('div');
+            home.className = 'home-bg';
+            
+            const couch = document.createElement('div');
+            couch.className = 'home-couch';
+            
+            const tv = document.createElement('div');
+            tv.className = 'home-tv';
+            
+            const chibi = createChibiBusinessman();
+            chibi.style.bottom = '30%';
+            
+            // Stop arm animations at home
+            chibi.querySelectorAll('.chibi-arm').forEach(arm => {
+                arm.style.animation = 'none';
+            });
+            
+            home.appendChild(couch);
+            home.appendChild(tv);
+            home.appendChild(chibi);
+            locationViewEl.appendChild(home);
+            
+            // Create action buttons
+            game.actions.home.forEach(action => {
+                const btn = document.createElement('button');
+                btn.textContent = action.name;
+                btn.addEventListener('click', () => performAction(action));
+                actionsEl.appendChild(btn);
+            });
+        }
+
+        function renderDriving() {
+            locationViewEl.innerHTML = '';
+            actionsEl.innerHTML = '';
+            
+            const driving = document.createElement('div');
+            driving.className = 'driving-screen';
+            
+            const speedometer = document.createElement('div');
+            speedometer.className = 'speedometer';
+            speedometer.textContent = `${Math.floor(Math.random() * 60) + 60} MPH`;
+            
+            const road = document.createElement('div');
+            road.className = 'road';
+            
+            const roadLine = document.createElement('div');
+            roadLine.className = 'road-line';
+            
+            road.appendChild(roadLine);
+            driving.appendChild(speedometer);
+            driving.appendChild(road);
+            locationViewEl.appendChild(driving);
+            
+            setTimeout(() => {
+                game.location = game.destination;
+                renderLocation();
+                addMessage(`Arrived at ${game.destination}`);
+                
+                // 50% chance to advance day after travel
+                if(Math.random() > 0.5) advanceDay();
+            }, 2000);
+        }
+
+        function renderLocation() {
+            if (game.location === 'office') {
+                renderOffice();
+                goOfficeBtn.disabled = true;
+                goHomeBtn.disabled = false;
+            } else if (game.location === 'home') {
+                renderHome();
+                goOfficeBtn.disabled = false;
+                goHomeBtn.disabled = true;
+            } else if (game.location === 'driving') {
+                renderDriving();
+                goOfficeBtn.disabled = true;
+                goHomeBtn.disabled = true;
+            }
+        }
+
+        function performAction(action) {
+            if (action.cost > game.money) {
+                addMessage("Not enough money!", 'error');
+                return;
+            }
+            
+            if (action.energy > game.energy) {
+                addMessage("Not enough energy!", 'error');
+                return;
+            }
+            
+            game.money -= action.cost;
+            game.money += action.earn;
+            game.energy -= action.energy;
+            
+            addMessage(action.message);
+            
+            // Random chance to earn SAINTS
+            if (Math.random() > 0.7 && action.earn > 0) {
+                const reward = Math.floor(action.earn / 100);
+                rewardPlayer(reward);
+            }
+            
+            // Advance day if energy low
+            if (game.energy < 20) {
+                advanceDay();
+            }
+            
+            updateStats();
+            renderLocation();
+        }
+
+        function advanceDay() {
+            game.day++;
+            game.energy = Math.min(100, game.energy + 30);
+            addMessage(`--- DAY ${game.day} ---`);
+            updateStats();
+        }
+
+        function travel(destination) {
+            game.location = 'driving';
+            game.destination = destination;
+            renderLocation();
+            addMessage(`Traveling to ${destination}...`);
+        }
+
+        function addMessage(text, className = '') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${className}`;
+            messageEl.textContent = text;
+            messageLogEl.appendChild(messageEl);
+            messageLogEl.scrollTop = messageLogEl.scrollHeight;
+        }
+
+        function updateStats() {
+            dayEl.textContent = game.day;
+            moneyEl.textContent = game.money;
+            energyEl.textContent = game.energy;
+            tokensEl.textContent = game.tokens;
+        }
+
+        // ======== BLOCKCHAIN FUNCTIONS ======== //
+        async function connectWallet() {
+            if (!window.solana) {
+                addMessage("Phantom Wallet required!", 'error');
+                return;
+            }
+            
+            try {
+                const wallet = window.solana;
+                await wallet.connect();
+                game.wallet = wallet;
+                walletStatusEl.textContent = `Wallet: ${wallet.publicKey.toString().slice(0,4)}...${wallet.publicKey.toString().slice(-4)}`;
+                await setupTokenAccount();
+                addMessage("Wallet connected successfully", 'success');
+            } catch (err) {
+                addMessage(`Connection failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function setupTokenAccount() {
+            try {
+                const connection = new solanaWeb3.Connection(SOLANA_RPC);
+                const mint = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
+                
+                game.tokenAccount = await splToken.getAssociatedTokenAddress(
+                    mint,
+                    game.wallet.publicKey
+                );
+                
+                const accountInfo = await connection.getAccountInfo(game.tokenAccount);
+                if (!accountInfo) {
+                    const tx = new solanaWeb3.Transaction().add(
+                        splToken.createAssociatedTokenAccountInstruction(
+                            game.wallet.publicKey,
+                            game.tokenAccount,
+                            game.wallet.publicKey,
+                            mint
+                        )
+                    );
+                    
+                    await game.wallet.signAndSendTransaction(tx);
+                    addMessage("SAINTS token account created", 'success');
+                }
+                
+                await updateTokenBalance();
+            } catch (err) {
+                addMessage(`Token setup failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function rewardPlayer(amount) {
+            if (!game.wallet || !game.tokenAccount) return;
+            
+            try {
+                const connection = new solanaWeb3.Connection(SOLANA_RPC);
+                const mint = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
+                const treasury = new solanaWeb3.PublicKey(TREASURY_WALLET);
+                const treasuryTokenAccount = await splToken.getAssociatedTokenAddress(
+                    mint,
+                    treasury
+                );
+                
+                const lamports = amount * (10 ** TOKEN_DECIMALS);
+                const transaction = new solanaWeb3.Transaction().add(
+                    splToken.createTransferInstruction(
+                        treasuryTokenAccount,
+                        game.tokenAccount,
+                        treasury,
+                        lamports,
+                        [],
+                        splToken.TOKEN_PROGRAM_ID
+                    )
+                );
+                
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = game.wallet.publicKey;
+                
+                const signedTx = await game.wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signedTx.serialize());
+                
+                game.tokens += amount;
+                updateStats();
+                addMessage(`+${amount} SAINTS rewarded! TX: ${signature.slice(0,8)}...`, 'success');
+            } catch (err) {
+                addMessage(`Reward failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function updateTokenBalance() {
+            try {
+                const connection = new solanaWeb3.Connection(SOLANA_RPC);
+                const balance = await connection.getTokenAccountBalance(game.tokenAccount);
+                game.tokens = balance.value.uiAmount || 0;
+                tokensEl.textContent = game.tokens;
+            } catch (err) {
+                console.error("Balance update error:", err);
+            }
+        }
+
+        // ======== INITIALIZE ======== //
+        function setupEventListeners() {
+            connectBtn.addEventListener('click', connectWallet);
+            goOfficeBtn.addEventListener('click', () => travel('office'));
+            goHomeBtn.addEventListener('click', () => travel('home'));
+        }
+
+        function init() {
+            setupEventListeners();
+            renderLocation();
+            addMessage("Welcome to Treasury Saints: Wolf Street!");
+        }
+
+        init();
+    </script>
+  <!-- Add this just before </body> -->
+<div id="mini-leaderboard" style="
+  position: fixed;
+  right: 10px;
+  top: 10px;
+  width: 250px;
+  background: rgba(0,0,50,0.8);
+  border: 2px solid var(--neon-cyan);
+  padding: 10px;
+  font-size: 0.7em;
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: 100;
+">
+  <h3 style="margin:0 0 10px 0; color: var(--neon-yellow);">🏆 TOP 5</h3>
+  <ol id="leaderboard-entries" style="padding-left: 20px; margin:0;"></ol>
+</div>
+
+<script>
+// Update leaderboard every 15 seconds
+async function updateLeaderboard() {
+  try {
+    const response = await fetch('/api/leaderboard?limit=5');
+    const players = await response.json();
+    
+    const list = document.getElementById('leaderboard-entries');
+    list.innerHTML = players.map(player => `
+      <li style="margin: 5px 0;">
+        ${player.wallet.slice(0,3)}...${player.wallet.slice(-3)}: 
+        <span style="color:var(--neon-pink);">${player.score}</span>
+      </li>
+    `).join('');
+  } catch (err) {
+    console.log("Leaderboard update failed:", err);
+  }
+}
+
+// Initial load + periodic refresh
+updateLeaderboard();
+setInterval(updateLeaderboard, 15000);
+</script>
+</body>
+</html>
