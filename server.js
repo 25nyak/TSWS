@@ -14,7 +14,7 @@ app.use(express.json());
 // ======== CONFIG (using YOUR env vars) ======== //
 const SOLANA_RPC = process.env.SOLANA_RPC;
 const TOKEN_MINT = new PublicKey(process.env.TOKEN_MINT); // h5eXaXRXyh8nzmPKxuRhySQkQxtSXECZmzBSKXfpump
-const TREASURY_WALLET = new PublicKey(process.env.TREASURY_WALLET); // A9pn3nqqoPEvw316py3WW7oPrub9iPYfCQQ24ub9xKY8
+const TREASURY_WALLET = new PublicKey(process.env.TREASURY_WALLET); // 4Zk9uyZc6KKm1CeVFZmbZod9CjEJR3RtGNuZEGPcmFpX
 const DAILY_REWARD = 100;
 const TOKEN_DECIMALS = 9;
 
