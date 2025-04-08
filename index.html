@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> <!-- TonConnect SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TREASURY SAINTS: WOLF STREET</title>
@@ -330,11 +329,6 @@
         
         <div id="wallet-status">Wallet: Not connected</div>
         <button id="connect-btn">CONNECT WALLET</button>
-        <!-- Add this below your existing wallet-status div -->
-<div id="ton-connect-ui" style="margin-top: 10px;">
-  <button id="ton-connect-btn" style="background: #0088cc; color: white;">Connect TON Wallet</button>
-  <div id="ton-status" style="margin-top: 5px; font-size: 0.8em;">TON: Not connected</div>
-</div>
         
         <div id="stats">
             <div class="stat">Day: <span id="day">1</span></div>
@@ -357,11 +351,12 @@
 
     <script src="https://unpkg.com/@solana/web3.js@1.70.1/lib/index.iife.min.js"></script>
     <script src="https://unpkg.com/@solana/spl-token@0.2.0/lib/index.iife.js"></script>
-     <script>
+    <script>
         // ======== BLOCKCHAIN CONFIG ======== //
-        const connector = new TonConnect.TonConnect({
-            manifestUrl: 'https://your-username.github.io/your-repo/tonconnect-manifest.json'
-        });
+        const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
+        const TOKEN_MINT_ADDRESS = "h5eXaXRXyh8nzmPKxuRhySQkQxtSXECZmzBSKXfpump";
+        const TREASURY_WALLET = "A9pn3nqqoPEvw316py3WW7oPrub9iPYfCQQ24ub9xKY8";
+        const TOKEN_DECIMALS = 9;
 
         // ======== GAME STATE ======== //
         const game = {
@@ -372,7 +367,6 @@
             location: 'office',
             wallet: null,
             tokenAccount: null,
-            connected: false,
             actions: {
                 office: [
                     { name: "Cold Call", cost: 0, earn: 200, energy: 15, message: "Made cold calls!" },
@@ -401,159 +395,6 @@
         const moneyEl = document.getElementById('money');
         const energyEl = document.getElementById('energy');
         const tokensEl = document.getElementById('tokens');
-
-        // ======== WALLET FUNCTIONS ======== //
-        async function connectWallet() {
-            // Check if Phantom is installed
-            if (!window.solana?.isPhantom) {
-                addMessage("Phantom Wallet not detected! Please install it first.", 'error');
-                window.open('https://phantom.app/', '_blank');
-                return;
-            }
-
-            // Handle mobile deep links
-            if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-                window.open(`https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(window.location.href)}`, '_blank');
-                return;
-            }
-
-            try {
-                // Try silent connect first
-                await window.solana.connect({ onlyIfTrusted: true });
-                
-                // If silent connect fails, do regular connect
-                const response = await window.solana.connect(); 
-                game.wallet = window.solana;
-                game.connected = true;
-                
-                // Update UI
-                const pubKey = response.publicKey.toString();
-                walletStatusEl.textContent = `Wallet: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
-                connectBtn.textContent = "CONNECTED";
-                connectBtn.style.backgroundColor = "#00aa00";
-                
-                // Initialize game features
-                await setupTokenAccount();
-                addMessage("Wallet connected successfully", 'success');
-                
-                // Enable game features
-                document.querySelectorAll('#actions button').forEach(btn => {
-                    btn.disabled = false;
-                });
-
-            } catch (err) {
-                addMessage(`Connection failed: ${err.message}`, 'error');
-                console.error("Wallet connection error:", err);
-            }
-        }
-
-        async function disconnectWallet() {
-            if (game.wallet?.isConnected) {
-                await game.wallet.disconnect();
-                game.wallet = null;
-                game.connected = false;
-                walletStatusEl.textContent = "Wallet: Not connected";
-                connectBtn.textContent = "CONNECT WALLET";
-                connectBtn.style.backgroundColor = "#9945FF";
-                addMessage("Wallet disconnected", 'error');
-            }
-        }
-
-        async function setupTokenAccount() {
-            try {
-                const connection = new solanaWeb3.Connection(SOLANA_RPC);
-                const mint = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
-                
-                game.tokenAccount = await splToken.getAssociatedTokenAddress(
-                    mint,
-                    game.wallet.publicKey
-                );
-                
-                const accountInfo = await connection.getAccountInfo(game.tokenAccount);
-                if (!accountInfo) {
-                    const tx = new solanaWeb3.Transaction().add(
-                        splToken.createAssociatedTokenAccountInstruction(
-                            game.wallet.publicKey,
-                            game.tokenAccount,
-                            game.wallet.publicKey,
-                            mint
-                        )
-                    );
-                    
-                    await game.wallet.signAndSendTransaction(tx);
-                    addMessage("SAINTS token account created", 'success');
-                }
-                
-                await updateTokenBalance();
-            } catch (err) {
-                addMessage(`Token setup failed: ${err.message}`, 'error');
-            }
-        }
-
-        async function rewardPlayer(amount) {
-            if (!game.connected || !game.tokenAccount) {
-                addMessage("Wallet not connected!", 'error');
-                return;
-            }
-
-            try {
-                const connection = new solanaWeb3.Connection(SOLANA_RPC);
-                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-                
-                const transaction = new solanaWeb3.Transaction({
-                    feePayer: game.wallet.publicKey,
-                    blockhash,
-                    lastValidBlockHeight
-                });
-
-                const mint = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
-                const treasury = new solanaWeb3.PublicKey(TREASURY_WALLET);
-                const treasuryTokenAccount = await splToken.getAssociatedTokenAddress(
-                    mint,
-                    treasury
-                );
-                
-                const lamports = amount * (10 ** TOKEN_DECIMALS);
-                transaction.add(
-                    splToken.createTransferInstruction(
-                        treasuryTokenAccount,
-                        game.tokenAccount,
-                        treasury,
-                        lamports,
-                        [],
-                        splToken.TOKEN_PROGRAM_ID
-                    )
-                );
-                
-                const signedTx = await game.wallet.signTransaction(transaction);
-                const signature = await connection.sendRawTransaction(signedTx.serialize());
-                
-                await connection.confirmTransaction({
-                    signature,
-                    blockhash,
-                    lastValidBlockHeight
-                }, 'confirmed');
-
-                game.tokens += amount;
-                updateStats();
-                addMessage(`+${amount} SAINTS! TX: ${signature.slice(0,8)}...`, 'success');
-                
-            } catch (err) {
-                addMessage(`Transaction failed: ${err.message}`, 'error');
-                console.error("Reward error:", err);
-            }
-        }
-
-        async function updateTokenBalance() {
-            try {
-                const connection = new solanaWeb3.Connection(SOLANA_RPC);
-                const balance = await connection.getTokenAccountBalance(game.tokenAccount);
-                game.tokens = balance.value.uiAmount || 0;
-                tokensEl.textContent = game.tokens;
-            } catch (err) {
-                console.error("Balance update error:", err);
-            }
-        }
 
         // ======== GAME FUNCTIONS ======== //
         function createChibiBusinessman() {
@@ -610,7 +451,6 @@
                 const btn = document.createElement('button');
                 btn.textContent = action.name;
                 btn.addEventListener('click', () => performAction(action));
-                btn.disabled = !game.connected; // Disable if wallet not connected
                 actionsEl.appendChild(btn);
             });
         }
@@ -646,7 +486,6 @@
                 const btn = document.createElement('button');
                 btn.textContent = action.name;
                 btn.addEventListener('click', () => performAction(action));
-                btn.disabled = !game.connected; // Disable if wallet not connected
                 actionsEl.appendChild(btn);
             });
         }
@@ -700,11 +539,6 @@
         }
 
         function performAction(action) {
-            if (!game.connected) {
-                addMessage("Connect wallet first!", 'error');
-                return;
-            }
-            
             if (action.cost > game.money) {
                 addMessage("Not enough money!", 'error');
                 return;
@@ -765,77 +599,161 @@
             tokensEl.textContent = game.tokens;
         }
 
+        // ======== BLOCKCHAIN FUNCTIONS ======== //
+        async function connectWallet() {
+            if (!window.solana) {
+                addMessage("Phantom Wallet required!", 'error');
+                return;
+            }
+            
+            try {
+                const wallet = window.solana;
+                await wallet.connect();
+                game.wallet = wallet;
+                walletStatusEl.textContent = `Wallet: ${wallet.publicKey.toString().slice(0,4)}...${wallet.publicKey.toString().slice(-4)}`;
+                await setupTokenAccount();
+                addMessage("Wallet connected successfully", 'success');
+            } catch (err) {
+                addMessage(`Connection failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function setupTokenAccount() {
+            try {
+                const connection = new solanaWeb3.Connection(SOLANA_RPC);
+                const mint = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
+                
+                game.tokenAccount = await splToken.getAssociatedTokenAddress(
+                    mint,
+                    game.wallet.publicKey
+                );
+                
+                const accountInfo = await connection.getAccountInfo(game.tokenAccount);
+                if (!accountInfo) {
+                    const tx = new solanaWeb3.Transaction().add(
+                        splToken.createAssociatedTokenAccountInstruction(
+                            game.wallet.publicKey,
+                            game.tokenAccount,
+                            game.wallet.publicKey,
+                            mint
+                        )
+                    );
+                    
+                    await game.wallet.signAndSendTransaction(tx);
+                    addMessage("SAINTS token account created", 'success');
+                }
+                
+                await updateTokenBalance();
+            } catch (err) {
+                addMessage(`Token setup failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function rewardPlayer(amount) {
+            if (!game.wallet || !game.tokenAccount) return;
+            
+            try {
+                const connection = new solanaWeb3.Connection(SOLANA_RPC);
+                const mint = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
+                const treasury = new solanaWeb3.PublicKey(TREASURY_WALLET);
+                const treasuryTokenAccount = await splToken.getAssociatedTokenAddress(
+                    mint,
+                    treasury
+                );
+                
+                const lamports = amount * (10 ** TOKEN_DECIMALS);
+                const transaction = new solanaWeb3.Transaction().add(
+                    splToken.createTransferInstruction(
+                        treasuryTokenAccount,
+                        game.tokenAccount,
+                        treasury,
+                        lamports,
+                        [],
+                        splToken.TOKEN_PROGRAM_ID
+                    )
+                );
+                
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = game.wallet.publicKey;
+                
+                const signedTx = await game.wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signedTx.serialize());
+                
+                game.tokens += amount;
+                updateStats();
+                addMessage(`+${amount} SAINTS rewarded! TX: ${signature.slice(0,8)}...`, 'success');
+            } catch (err) {
+                addMessage(`Reward failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function updateTokenBalance() {
+            try {
+                const connection = new solanaWeb3.Connection(SOLANA_RPC);
+                const balance = await connection.getTokenAccountBalance(game.tokenAccount);
+                game.tokens = balance.value.uiAmount || 0;
+                tokensEl.textContent = game.tokens;
+            } catch (err) {
+                console.error("Balance update error:", err);
+            }
+        }
+
         // ======== INITIALIZE ======== //
         function setupEventListeners() {
             connectBtn.addEventListener('click', connectWallet);
             goOfficeBtn.addEventListener('click', () => travel('office'));
             goHomeBtn.addEventListener('click', () => travel('home'));
-            
-            // Handle wallet disconnect
-            window.solana?.on('disconnect', disconnectWallet);
-        }
-
-        async function trySilentConnect() {
-            if (window.solana?.isPhantom) {
-                try {
-                    await window.solana.connect({ onlyIfTrusted: true });
-                    connectWallet(); // Will use existing connection
-                } catch (silentError) {
-                    console.log("Silent connect failed, needs manual connection");
-                }
-            }
         }
 
         function init() {
             setupEventListeners();
             renderLocation();
             addMessage("Welcome to Treasury Saints: Wolf Street!");
-            trySilentConnect();
         }
 
         init();
     </script>
+  <!-- Add this just before </body> -->
+<div id="mini-leaderboard" style="
+  position: fixed;
+  right: 10px;
+  top: 10px;
+  width: 250px;
+  background: rgba(0,0,50,0.8);
+  border: 2px solid var(--neon-cyan);
+  padding: 10px;
+  font-size: 0.7em;
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: 100;
+">
+  <h3 style="margin:0 0 10px 0; color: var(--neon-yellow);">🏆 TOP 5</h3>
+  <ol id="leaderboard-entries" style="padding-left: 20px; margin:0;"></ol>
+</div>
 
-    <!-- Mini Leaderboard -->
-    <div id="mini-leaderboard" style="
-        position: fixed;
-        right: 10px;
-        top: 10px;
-        width: 250px;
-        background: rgba(0,0,50,0.8);
-        border: 2px solid var(--neon-cyan);
-        padding: 10px;
-        font-size: 0.7em;
-        max-height: 50vh;
-        overflow-y: auto;
-        z-index: 100;
-    ">
-        <h3 style="margin:0 0 10px 0; color: var(--neon-yellow);">🏆 TOP 5</h3>
-        <ol id="leaderboard-entries" style="padding-left: 20px; margin:0;"></ol>
-    </div>
+<script>
+// Update leaderboard every 15 seconds
+async function updateLeaderboard() {
+  try {
+    const response = await fetch('/api/leaderboard?limit=5');
+    const players = await response.json();
+    
+    const list = document.getElementById('leaderboard-entries');
+    list.innerHTML = players.map(player => `
+      <li style="margin: 5px 0;">
+        ${player.wallet.slice(0,3)}...${player.wallet.slice(-3)}: 
+        <span style="color:var(--neon-pink);">${player.score}</span>
+      </li>
+    `).join('');
+  } catch (err) {
+    console.log("Leaderboard update failed:", err);
+  }
+}
 
-    <script>
-    // Update leaderboard every 15 seconds
-    async function updateLeaderboard() {
-        try {
-            const response = await fetch('/api/leaderboard?limit=5');
-            const players = await response.json();
-            
-            const list = document.getElementById('leaderboard-entries');
-            list.innerHTML = players.map(player => `
-                <li style="margin: 5px 0;">
-                    ${player.wallet.slice(0,3)}...${player.wallet.slice(-3)}: 
-                    <span style="color:var(--neon-pink);">${player.score}</span>
-                </li>
-            `).join('');
-        } catch (err) {
-            console.log("Leaderboard update failed:", err);
-        }
-    }
-
-    // Initial load + periodic refresh
-    updateLeaderboard();
-    setInterval(updateLeaderboard, 15000);
-    </script>
+// Initial load + periodic refresh
+updateLeaderboard();
+setInterval(updateLeaderboard, 15000);
+</script>
 </body>
 </html>
